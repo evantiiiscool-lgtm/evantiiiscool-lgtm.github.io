@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hello</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #ffffff;
+      color: #000000;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    }
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Hello</h1>
+
+  <script>
+    // Paste your Discord webhook URL between the quotes below.
+    var DISCORD_WEBHOOK_URL = "PASTE_YOUR_DISCORD_WEBHOOK_URL_HERE";
+
+    (function notifyVisit() {
+      if (!DISCORD_WEBHOOK_URL || DISCORD_WEBHOOK_URL.indexOf("discord.com/api/webhooks/") === -1) {
+        return; // No valid webhook configured yet.
+      }
+      try {
+        fetch(DISCORD_WEBHOOK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: "User visited" })
+        });
+      } catch (e) {
+        // Ignore errors so the page still renders normally.
+      }
+    })();
+  </script>
+</body>
+</html>
