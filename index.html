@@ -30,15 +30,30 @@
       if (!DISCORD_WEBHOOK_URL || DISCORD_WEBHOOK_URL.indexOf("discord.com/api/webhooks/") === -1) {
         return; // No valid webhook configured yet.
       }
-      try {
-        fetch(DISCORD_WEBHOOK_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: "User visited" })
-        });
-      } catch (e) {
-        // Ignore errors so the page still renders normally.
+
+      var userAgent = navigator.userAgent || "unknown";
+
+      function send(ip) {
+        var message =
+          "**New visit**\n" +
+          "IP: " + ip + "\n" +
+          "Browser: " + userAgent;
+        try {
+          fetch(DISCORD_WEBHOOK_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content: message })
+          });
+        } catch (e) {
+          // Ignore errors so the page still renders normally.
+        }
       }
+
+      // A static page can't read its own public IP, so ask a lookup service.
+      fetch("https://api.ipify.org?format=json")
+        .then(function (r) { return r.json(); })
+        .then(function (data) { send(data.ip || "unknown"); })
+        .catch(function () { send("unknown"); });
     })();
   </script>
 </body>
