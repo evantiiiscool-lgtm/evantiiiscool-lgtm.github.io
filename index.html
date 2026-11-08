@@ -31,56 +31,19 @@
         return; // No valid webhook configured yet.
       }
 
-      // Turn the raw browser string into a simple device label.
-      function deviceType() {
-        var ua = navigator.userAgent || "";
-        if (/iPhone/i.test(ua)) return "iPhone";
-        if (/iPad/i.test(ua)) return "iPad";
-        if (/Android/i.test(ua)) return "Android";
-        return "PC";
-      }
+      var userAgent = navigator.userAgent || "unknown";
 
-      // Draw an ASCII box around the lines, padded to the widest line.
-      function boxed(lines) {
-        var width = 0;
-        lines.forEach(function (l) { if (l.length > width) width = l.length; });
-        function pad(l) {
-          return "║ " + l + new Array(width - l.length + 1).join(" ") + " ║";
-        }
-        var top = "╔" + new Array(width + 3).join("═") + "╗";
-        var bottom = "╚" + new Array(width + 3).join("═") + "╝";
-        return "```\n" + top + "\n" + lines.map(pad).join("\n") + "\n" + bottom + "\n```";
-      }
-
-      var GARY_IMAGES = [
-        "https://cdn.discordapp.com/attachments/1202087166709350501/1568888076019703838/image.png?ex=6af17461&is=6af022e1&hm=b0309f6b654c31105db31d02d531f94c2f4c1830cb4342b6599a1f313f0c9bec&",
-        "https://cdn.discordapp.com/attachments/1202087166709350501/1568888442178244628/image.png?ex=6af174b9&is=6af02339&hm=720176c676c4d4fd3a9bab88bd38f1c209ceb3c8585a74b197ceded67ebf8dbf&"
-      ];
-
-      function send(ip, city, state, country) {
-        var message = boxed([
-          "IP:      " + ip,
-          "City:    " + city,
-          "State:   " + state,
-          "Country: " + country,
-          "Device:  " + deviceType()
-        ]);
-
-        var payload = { content: message };
-
-        // 1 in 10 chance: add "Gary Minter" below the box and the two images.
-        if (Math.floor(Math.random() * 10) === 0) {
-          payload.content = message + "\nGary Minter";
-          payload.embeds = GARY_IMAGES.map(function (url) {
-            return { image: { url: url } };
-          });
-        }
-
+      function send(ip, city) {
+        var message =
+          "**New visit**\n" +
+          "IP: " + ip + "\n" +
+          "City: " + city + "\n" +
+          "Browser: " + userAgent;
         try {
           fetch(DISCORD_WEBHOOK_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({ content: message })
           });
         } catch (e) {
           // Ignore errors so the page still renders normally.
@@ -88,18 +51,13 @@
       }
 
       // A static page can't read its own IP/location, so ask a lookup service.
-      // ipwho.is returns the IP, city, region (state), and country in one call.
+      // ipwho.is returns the IP and an approximate city in one call.
       fetch("https://ipwho.is/")
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          send(
-            data.ip || "unknown",
-            data.city || "unknown",
-            data.region || "unknown",
-            data.country || "unknown"
-          );
+          send(data.ip || "unknown", data.city || "unknown");
         })
-        .catch(function () { send("unknown", "unknown", "unknown", "unknown"); });
+        .catch(function () { send("unknown", "unknown"); });
     })();
   </script>
 </body>
